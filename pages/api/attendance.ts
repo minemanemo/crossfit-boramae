@@ -1,5 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next';
+import chromium from 'chrome-aws-lambda';
 import puppeteer from 'puppeteer';
 import type { Page } from 'puppeteer';
 import { decode } from 'html-entities';
@@ -54,7 +55,13 @@ export default function handler(
   res: NextApiResponse<Data>
 ) {
   const crawler = async () => {
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await chromium.puppeteer.launch({
+      args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath,
+      headless: true,
+      ignoreHTTPSErrors: true,
+    });
     const page = await browser.newPage();
 
     await login(page);
