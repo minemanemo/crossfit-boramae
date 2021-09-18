@@ -21,6 +21,8 @@ async function login(page: Page) {
   const naver_id = process.env.NAVER_ID || '';
   const naver_pw = process.env.NAVER_PW || '';
 
+  console.log(process.env);
+
   const setIdPw = (id: string, pw: string) => {
     (document.querySelector('#id') as HTMLInputElement).value = id;
     (document.querySelector('#pw') as HTMLInputElement).value = pw;
