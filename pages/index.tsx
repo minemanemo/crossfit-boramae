@@ -18,12 +18,15 @@ import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
 import MenuIcon from '@mui/icons-material/Menu';
+import BugReportIcon from '@mui/icons-material/BugReport';
 
 import { LinearProgress, Typography } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 
+import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
@@ -203,6 +206,17 @@ const Home: NextPage = () => {
             )}
           </TableContainer>
         </div>
+      </div>
+
+      <div>
+        <Link
+          href="https://loving-cabbage-5c0.notion.site/204e7a38fe054a088fc910406b30b7b9"
+          target="_blank"
+        >
+          <Button color="error" startIcon={<BugReportIcon />}>
+            버그 신고 방법
+          </Button>
+        </Link>
       </div>
     </div>
   );

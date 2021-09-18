@@ -31,11 +31,24 @@ async function login(page: Page) {
   await page.evaluate(setIdPw, naver_id, naver_pw);
 
   await page.click('.btn_login');
+
+  let login_state = '';
   await page.waitForResponse((_res) => {
+    const secureCheckUrl = 'https://nid.naver.com/user2/help/idSafetyRelease';
+    if (_res.url().startsWith(secureCheckUrl)) {
+      login_state = 'fail - ID is Secure';
+      return true;
+    }
+
     const urlCheck = _res.url().startsWith('https://www.naver.com/');
     const statusCheck = _res.status() === 200;
+    login_state = 'success';
     return urlCheck && statusCheck;
   });
+
+  if (login_state !== 'success') {
+    throw new Error(login_state);
+  }
 }
 
 async function getAttendanceBook(
@@ -136,7 +149,7 @@ function parseResult(data: string[]): Reserve[] {
 
 export default function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>
+  res: NextApiResponse<Data | { message: string }>
 ) {
   const crawler = async () => {
     const browser = await chromium.puppeteer.launch({
@@ -152,8 +165,14 @@ export default function handler(
     const d = Number(req.query.d);
 
     const page = await browser.newPage();
-    await login(page);
-    const result = await getAttendanceBook(page, y, m, d);
+
+    let result: string[] = [];
+    try {
+      await login(page);
+      result = await getAttendanceBook(page, y, m, d);
+    } catch (e) {
+      res.status(500).json({ message: (e as Object).toString() });
+    }
     await browser.close();
 
     const parsed = parseResult(result);

@@ -1,8 +1,28 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 프로젝트 개요
 
-## Getting Started
+보라매 크로스핏 운영에 도움이 되는 기능을 제공해주는 사이트 소스 입니다. ([카페 링크 바로가기](https://cafe.naver.com/cfzms))
 
-First, run the development server:
+## 프로젝트 시작 방법
+
+### 1️⃣ . Local Envirment 파일 세팅
+
+- 프로젝트 ROOT에 `.env.local` 파일 추가 후 아래 내용 추가
+- 추가하는 네이버 계정에 2차 인증이 세팅 되어있는 경우 API가 동작 실패 합니다. 😢
+
+```
+NAVER_ID={네이버 아이디}
+NAVER_PW={네이버 패스워드}
+```
+
+### 2️⃣ . 프로젝트 의존성 모듈 설치
+
+```bash
+npm install
+# or
+yarn install
+```
+
+### 2️⃣ . 프로젝트 시작
 
 ```bash
 npm run dev
@@ -10,25 +30,15 @@ npm run dev
 yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 프로젝트 기여 방법
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+### 1️⃣ . 브랜치를 추가해주세요! (이슈를 추가해서 기여하면 더욱 더 좋습니다!)
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+- issue 생성 시 브랜치 명: `feature/#{이슈번호}` or `bugfix/#{이슈번호}`
+- issue 미 생성 시 브랜치 명: `feature/{추가 기능 간략 내용}` or `bugfix/{버그 수정 간략 용용}`
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+### 2️⃣ . PR을 날려주세요
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- PR 대상은 `master` 브랜치로 설정해주세요!
+- 리뷰어에 `@minemanemo` 추가해주시면 리뷰하고 merge 하겠습니다!
+- master 브랜치로 머지 되면 자동 배포 됩니다!
