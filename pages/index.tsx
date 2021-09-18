@@ -96,7 +96,7 @@ const Home: NextPage = () => {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" color="inherit" component="div">
-              크로스핏 보라매 출석부
+              크로스핏 보라매
             </Typography>
           </Toolbar>
         </AppBar>
@@ -107,8 +107,8 @@ const Home: NextPage = () => {
           style={{
             padding: 20,
             display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
+            flexDirection: 'column',
+            justifyContent: 'center',
             gap: 20,
           }}
         >
@@ -123,17 +123,9 @@ const Home: NextPage = () => {
             />
           </LocalizationProvider>
 
-          <Stack direction="row" spacing={1}>
-            <Chip label="참여" color="success" />
-            <Chip
-              label="참여(코맨트 있음, 마우스를 올려보세요!)"
-              color="primary"
-            />
-            <Chip
-              label="취소(취소 사유, 마우스를 올려보세요!)"
-              color="warning"
-            />
-          </Stack>
+          <Chip label="🏃‍♂️ 참여" color="success" />
+          <Chip label="🏃 참여 - 🖱👆🏼 댓글 있음. Mouse Over!" color="primary" />
+          <Chip label="😢 취소 - 🖱👆🏼 취소 사유. Mouse Over!" color="warning" />
         </div>
 
         <div style={{ padding: 20 }}>
@@ -161,7 +153,8 @@ const Home: NextPage = () => {
                     <TableCell component="th" scope="row">
                       <div>{row}</div>
                       <div>{`(${
-                        data.filter((d) => d.time === row).length
+                        data.filter((d) => d.cancel === false && d.time === row)
+                          .length
                       }명)`}</div>
                     </TableCell>
                     <TableCell align="right">
