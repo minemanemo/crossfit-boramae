@@ -192,7 +192,15 @@ const Home: NextPage = () => {
                 ))}
               </TableBody>
             </Table>
-            {loading && <LinearProgress />}
+            {loading && (
+              <div>
+                <p>
+                  네이버 카페로 직접 접속해서 데이터를 가져오기 때문에 느려요 🥲
+                  이해부탁해요 🙏🏼
+                </p>
+                <LinearProgress />
+              </div>
+            )}
           </TableContainer>
         </div>
       </div>
