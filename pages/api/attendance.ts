@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import chromium from 'chrome-aws-lambda';
+import puppeteer from 'puppeteer';
 import type { Page } from 'puppeteer';
 import { decode } from 'html-entities';
 
@@ -17,8 +18,8 @@ function getUrl(y: number, m: number, d: number, page?: number): string {
 }
 
 async function login(page: Page) {
-  const naver_id = 'borame-crossfit-bot';
-  const naver_pw = 'Qhfkao1!';
+  const naver_id = process.env.NAVER_ID || '';
+  const naver_pw = process.env.NAVER_PW || '';
 
   const setIdPw = (id: string, pw: string) => {
     (document.querySelector('#id') as HTMLInputElement).value = id;
@@ -141,7 +142,7 @@ export default function handler(
       args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath,
-      headless: true,
+      headless: process.env.NODE_ENV === 'production',
       ignoreHTTPSErrors: true,
     });
 
