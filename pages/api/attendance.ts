@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import chromium from 'chrome-aws-lambda';
-import puppeteer from 'puppeteer';
 import type { Page } from 'puppeteer';
 import { decode } from 'html-entities';
 
