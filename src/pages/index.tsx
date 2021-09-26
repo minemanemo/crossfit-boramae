@@ -23,7 +23,6 @@ import MenuIcon from '@mui/icons-material/Menu';
 import BugReportIcon from '@mui/icons-material/BugReport';
 
 import { LinearProgress, Typography } from '@mui/material';
-import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 
 import Link from '@mui/material/Link';
@@ -32,11 +31,15 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import DatePicker from '@mui/lab/DatePicker';
 
-import { Reserve } from './api/attendance';
+import type {
+  AttendData,
+  ReadAttendDataListBody,
+} from '@common/types/attendance';
+import axios from 'axios';
 
 const Home: NextPage = () => {
   const [date, setDate] = useState<Date | null>(new Date());
-  const [data, setData] = useState<Reserve[]>([]);
+  const [data, setData] = useState<AttendData[]>([]);
   const [classTime, setClassTime] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [alertMsg, setAlertMessage] = useState('');
@@ -44,6 +47,23 @@ const Home: NextPage = () => {
   const dateString = `${date?.getFullYear()}-${
     (date?.getMonth() || 0) + 1
   }-${date?.getDate()}`;
+
+  const getStateColor = (state: AttendData['state'], isComment: boolean) => {
+    if (isComment) {
+      return 'primary';
+    }
+
+    switch (state) {
+      case 'ATTEND':
+        return 'success';
+      case 'CANCEL':
+        return 'error';
+      case 'CHANGE':
+        return 'warning';
+      case 'UNKOWN':
+        return;
+    }
+  };
 
   async function getDataFromAPI(y?: number, m?: number, d?: number) {
     const current = new Date();
@@ -58,17 +78,19 @@ const Home: NextPage = () => {
       setAlertMessage('');
       setData([]);
       setClassTime([]);
-      const res = await fetch(url, { method: 'GET' });
-      const _data = await res.json();
-      setData(_data.data);
 
-      if (_data.data.length === 0) {
+      const {
+        data: { data },
+      } = await axios.get<ReadAttendDataListBody>(url);
+      setData(data);
+
+      if (data.length === 0) {
         setAlertMessage('신청자가 없습니다.');
       }
 
-      const dd: Reserve[] = _data.data;
+      // const dd: Reserve[] = data;
       const obj: { [key: string]: number } = {};
-      dd.forEach(({ time }) => {
+      data.forEach(({ time }) => {
         obj[time] = obj[time] ? obj[time] + 1 : 1;
       });
 
@@ -156,8 +178,9 @@ const Home: NextPage = () => {
                     <TableCell component="th" scope="row">
                       <div>{row}</div>
                       <div>{`(${
-                        data.filter((d) => d.cancel === false && d.time === row)
-                          .length
+                        data.filter(
+                          (d) => d.state === 'ATTEND' && d.time === row
+                        ).length
                       }명)`}</div>
                     </TableCell>
                     <TableCell align="right">
@@ -173,19 +196,13 @@ const Home: NextPage = () => {
                           .filter((d) => d.time === row)
                           .map((d) => (
                             <Tooltip
-                              key={`${d.num}-${d.name}`}
+                              key={`${d.phone}-${d.name}`}
                               title={d.comment}
                               arrow
                             >
                               <Chip
-                                label={`${d.name} - ${d.num}`}
-                                color={
-                                  d.cancel
-                                    ? 'warning'
-                                    : d.comment !== ''
-                                    ? 'primary'
-                                    : 'success'
-                                }
+                                label={`${d.name} - ${d.phone}`}
+                                color={getStateColor(d.state, d.comment !== '')}
                               />
                             </Tooltip>
                           ))}
