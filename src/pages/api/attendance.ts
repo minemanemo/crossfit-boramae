@@ -14,7 +14,6 @@ export default function handler(
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath,
       headless: true,
-      // process.env.NODE_ENV === 'production',
       ignoreHTTPSErrors: true,
     });
 
@@ -26,9 +25,9 @@ export default function handler(
 
     try {
       await naverLogin(page);
-      const data = await getAttendanceSourceBook(page, y, m, d);
+      const { data, unknown } = await getAttendanceSourceBook(page, y, m, d);
 
-      res.status(200).json({ data });
+      res.status(200).json({ data, unknown });
     } catch (e) {
       res.status(500).statusMessage = (e as Object).toString();
     }

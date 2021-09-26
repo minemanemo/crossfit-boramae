@@ -130,13 +130,38 @@ function parseComment(_comment: string): ParseComment {
     time: '',
     name: '',
     phone: '',
-    comment: '',
+    comment: raw_comment,
     raw_comment,
-    state: 'UNKOWN',
+    state: 'UNKNOWN',
   };
 }
 
-export function AttendanceParse(data: Data): AttendData[] {
+function filterComment(_user: string, _comment: string): boolean {
+  const isCoach = _user.indexOf('코치');
+
+  if (_comment.indexOf('현황') >= 0) {
+    return true;
+  }
+  if (_comment.indexOf('공지') >= 0) {
+    return true;
+  }
+  if (isCoach && /즐거운/.test(_comment) && /주말/.test(_comment)) {
+    return true;
+  }
+  if (isCoach && /^[- ]+$/.test(_comment)) {
+    return true;
+  }
+
+  return false;
+}
+export type AttendanceParseReturn = {
+  ATTEND: AttendData[];
+  CHANGE: AttendData[];
+  CANCEL: AttendData[];
+  UNKNOWN: AttendData[];
+};
+
+export function AttendanceParse(data: Data): AttendanceParseReturn {
   const { thumbnail, nickname, comment, date } = data;
 
   if (nickname.length !== thumbnail.length) {
@@ -150,7 +175,12 @@ export function AttendanceParse(data: Data): AttendData[] {
   }
 
   const size = nickname.length;
-  const result: AttendData[] = [];
+  const result: AttendanceParseReturn = {
+    ATTEND: [],
+    CHANGE: [],
+    CANCEL: [],
+    UNKNOWN: [],
+  };
 
   for (let i = 0; i < size; i++) {
     const _user = nickname[i];
@@ -158,37 +188,21 @@ export function AttendanceParse(data: Data): AttendData[] {
     const _comment = comment[i];
     const _date = date[i];
 
-    // filter
-    if (_comment.indexOf('현황') >= 0) {
-      continue;
-    }
-    if (_comment.indexOf('공지') >= 0) {
-      continue;
-    }
-    if (
-      _user.indexOf('코치') >= 0 &&
-      /즐거운/.test(_comment) &&
-      /주말/.test(_comment)
-    ) {
-      continue;
-    }
-    if (_user.indexOf('코치') >= 0 && /^[- ]+$/.test(_comment)) {
+    if (filterComment(_user, _comment)) {
       continue;
     }
 
     const parsed = parseComment(_comment);
-    if (parsed.state === 'UNKOWN') {
+    if (parsed.state === 'UNKNOWN') {
       console.log('🚀 :', _user, ` // "${parsed.raw_comment}"`);
     }
 
-    const data: AttendData = {
+    result[parsed.state].push({
       ...parsed,
       user: _user,
       thumbnail: _thumbnail,
       date: _date,
-    };
-    result.push(data);
+    });
   }
-
   return result;
 }

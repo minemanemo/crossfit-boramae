@@ -7,7 +7,10 @@ export type AttendData = {
   name: string;
   time: string;
   phone: string;
-  state: 'ATTEND' | 'CHANGE' | 'CANCEL' | 'UNKOWN';
+  state: 'ATTEND' | 'CHANGE' | 'CANCEL' | 'UNKNOWN';
 };
 
-export type ReadAttendDataListBody = { data: AttendData[] };
+export type ReadAttendDataListBody = {
+  data: AttendData[];
+  unknown: AttendData[];
+};

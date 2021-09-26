@@ -2,7 +2,8 @@ import type { Frame, Page } from 'puppeteer';
 
 import { getCafeAttendBookUrl } from './url';
 import type { AttendData } from '@common/types/attendance';
-import { AttendanceParse } from './parser';
+import { AttendanceParse, AttendanceParseReturn } from './parser';
+import { keys } from 'lodash';
 
 export async function naverLogin(page: Page) {
   const naver_id = process.env.NAVER_ID || '';
@@ -79,7 +80,7 @@ export async function getAttendanceSourceBook(
   y: number,
   m: number,
   d: number
-): Promise<AttendData[]> {
+): Promise<{ data: AttendData[]; unknown: AttendData[] }> {
   const url = getCafeAttendBookUrl(y, m, d);
   await page.goto(url);
 
@@ -89,11 +90,17 @@ export async function getAttendanceSourceBook(
   const totalPageSelector = '.attendance_lst_section .prev-next a';
   const totalPage = await frame?.$$eval(totalPageSelector, (els) => els.length);
 
-  let result: AttendData[] = [];
   const thumbnailSelector = '.list_attendance li .box_user .pc2w img';
   const nicknameSelector = '.list_attendance li .box_user .p-nick .link_text';
   const commentSelector = '.list_attendance li .cmt .txt';
   const dateSelector = '.list_attendance li .cmt .date';
+
+  const result: AttendanceParseReturn = {
+    ATTEND: [],
+    CHANGE: [],
+    CANCEL: [],
+    UNKNOWN: [],
+  };
 
   for (let i = 1; i <= (totalPage || 0); i++) {
     await page.goto(getCafeAttendBookUrl(y, m, d, i));
@@ -106,9 +113,40 @@ export async function getAttendanceSourceBook(
     const date = await getInnerHTMLList(frame, dateSelector);
 
     const data = AttendanceParse({ thumbnail, nickname, comment, date });
-
-    result = [...result, ...data];
+    result.ATTEND = [...result.ATTEND, ...data.ATTEND];
+    result.CHANGE = [...result.CHANGE, ...data.CHANGE];
+    result.CANCEL = [...result.CANCEL, ...data.CANCEL];
+    result.UNKNOWN = [...result.UNKNOWN, ...data.UNKNOWN];
   }
 
-  return result;
+  // apply change
+  result.CHANGE.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  ).forEach((change) => {
+    for (let i = 0; i < result.ATTEND.length; i++) {
+      if (result.ATTEND[i].name === change.name) {
+        const newComment = `${result.ATTEND[i].comment} / ${change.comment}`;
+        result.ATTEND[i].comment = newComment;
+        result.ATTEND[i].state = 'CANCEL';
+      }
+    }
+    result.ATTEND.push(change);
+  });
+
+  // apply cancel
+  result.CANCEL.forEach((cancel) => {
+    const idx = result.ATTEND.findIndex(
+      (attend) => attend.time === cancel.time && attend.name === cancel.name
+    );
+    if (idx >= 0) {
+      result.ATTEND[idx].state = 'CANCEL';
+    }
+  });
+
+  // sort result
+  const sorted = result.ATTEND.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  return { data: sorted, unknown: result.UNKNOWN };
 }
