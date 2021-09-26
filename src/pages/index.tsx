@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { NextPage } from 'next';
 
 import _keys from 'lodash/keys';
@@ -14,36 +14,49 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import Button from '@mui/material/Button';
-import MenuIcon from '@mui/icons-material/Menu';
-import BugReportIcon from '@mui/icons-material/BugReport';
-
 import { LinearProgress, Typography } from '@mui/material';
-import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 
-import Link from '@mui/material/Link';
-import TextField from '@mui/material/TextField';
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
-import LocalizationProvider from '@mui/lab/LocalizationProvider';
-import DatePicker from '@mui/lab/DatePicker';
-
-import { Reserve } from './api/attendance';
+import type {
+  AttendData,
+  ReadAttendDataListBody,
+} from '@common/types/attendance';
+import axios from 'axios';
+import StateDescriptionBox from '@components/StateDescriptionBox';
+import CalendarInputBox from '@components/CalendarInputBox';
+import BugReportBox from '@components/BugReportBox';
 
 const Home: NextPage = () => {
   const [date, setDate] = useState<Date | null>(new Date());
-  const [data, setData] = useState<Reserve[]>([]);
+  const [data, setData] = useState<AttendData[]>([]);
+  const [unknown, setUnknown] = useState<AttendData[]>([]);
   const [classTime, setClassTime] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [alertMsg, setAlertMessage] = useState('');
 
-  const dateString = `${date?.getFullYear()}-${
-    (date?.getMonth() || 0) + 1
-  }-${date?.getDate()}`;
+  const dateString = useMemo(() => {
+    const year = date?.getFullYear();
+    const month = (date?.getMonth() || 0) + 1;
+    const day = date?.getDate();
+
+    return `${year}-${month}-${day}`;
+  }, [date]);
+
+  const getStateColor = useCallback(
+    (state: AttendData['state'], isComment: boolean) => {
+      switch (state) {
+        case 'ATTEND':
+          return isComment ? 'primary' : 'success';
+        case 'CANCEL':
+          return 'error';
+        case 'CHANGE':
+          return 'warning';
+        case 'UNKNOWN':
+          return;
+      }
+    },
+    []
+  );
 
   async function getDataFromAPI(y?: number, m?: number, d?: number) {
     const current = new Date();
@@ -57,22 +70,25 @@ const Home: NextPage = () => {
       setLoading(true);
       setAlertMessage('');
       setData([]);
+      setUnknown([]);
       setClassTime([]);
-      const res = await fetch(url, { method: 'GET' });
-      const _data = await res.json();
-      setData(_data.data);
 
-      if (_data.data.length === 0) {
+      const {
+        data: { data, unknown },
+      } = await axios.get<ReadAttendDataListBody>(url);
+      setData(data);
+      setUnknown(unknown);
+
+      if (data.length === 0) {
         setAlertMessage('신청자가 없습니다.');
       }
 
-      const dd: Reserve[] = _data.data;
       const obj: { [key: string]: number } = {};
-      dd.forEach(({ time }) => {
+      data.forEach(({ time }) => {
         obj[time] = obj[time] ? obj[time] + 1 : 1;
       });
 
-      setClassTime(_keys(obj));
+      setClassTime(_keys(obj).sort());
     } catch (e) {
       setAlertMessage(
         `오류가 발생하였습니다. 카페에 글 올려주시면 확인하겠습니다. :)`
@@ -81,61 +97,26 @@ const Home: NextPage = () => {
       setLoading(false);
     }
   }
+
   useEffect(() => {
     getDataFromAPI(date?.getFullYear(), date?.getMonth(), date?.getDate());
   }, [date]);
 
+  // Event
+  function handleChangeDate(v: Date | null) {
+    setDate(v);
+  }
+
   return (
     <div>
-      <Box sx={{ flexGrow: 1 }}>
-        <AppBar position="static">
-          <Toolbar variant="dense">
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="menu"
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" color="inherit" component="div">
-              크로스핏 보라매
-            </Typography>
-          </Toolbar>
-        </AppBar>
-      </Box>
-
       <div>
-        <div
-          style={{
-            padding: 20,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            gap: 20,
-          }}
-        >
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DatePicker
-              label="날짜 선택"
-              value={date}
-              onChange={(newValue) => {
-                setDate(newValue);
-              }}
-              renderInput={(params) => <TextField {...params} />}
-            />
-          </LocalizationProvider>
-
-          <Chip label="🏃‍♂️ 참여" color="success" />
-          <Chip label="🏃 참여 - 🖱👆🏼 댓글 있음. Mouse Over!" color="primary" />
-          <Chip label="😢 취소 - 🖱👆🏼 취소 사유. Mouse Over!" color="warning" />
-        </div>
+        <CalendarInputBox value={date} onChange={handleChangeDate} />
 
         <div style={{ padding: 20 }}>
           <Typography variant="h6">{`${dateString} 출석부`}</Typography>
 
           <TableContainer component={Paper}>
-            <Table aria-label="simple table">
+            <Table>
               <TableHead>
                 <TableRow>
                   <TableCell width={100}>수업</TableCell>
@@ -148,6 +129,27 @@ const Home: NextPage = () => {
                     <TableCell colSpan={3}>{alertMsg}</TableCell>
                   </TableRow>
                 )}
+                {unknown.length > 0 && (
+                  <TableRow>
+                    <TableCell colSpan={2}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'row',
+                          flexWrap: 'wrap',
+                          gap: 10,
+                        }}
+                      >
+                        <Typography variant="body2">
+                          아래 댓글들은 판단이 어려워요 😢
+                        </Typography>
+                        {unknown.map((u) => (
+                          <Chip key={u.date} label={u.comment} />
+                        ))}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
                 {classTime.map((row) => (
                   <TableRow
                     key={row}
@@ -156,8 +158,11 @@ const Home: NextPage = () => {
                     <TableCell component="th" scope="row">
                       <div>{row}</div>
                       <div>{`(${
-                        data.filter((d) => d.cancel === false && d.time === row)
-                          .length
+                        data.filter(
+                          (d) =>
+                            ['ATTEND', 'CHANGE'].includes(d.state) &&
+                            d.time === row
+                        ).length
                       }명)`}</div>
                     </TableCell>
                     <TableCell align="right">
@@ -173,19 +178,13 @@ const Home: NextPage = () => {
                           .filter((d) => d.time === row)
                           .map((d) => (
                             <Tooltip
-                              key={`${d.num}-${d.name}`}
+                              key={`${d.phone}-${d.date}`}
                               title={d.comment}
                               arrow
                             >
                               <Chip
-                                label={`${d.name} - ${d.num}`}
-                                color={
-                                  d.cancel
-                                    ? 'warning'
-                                    : d.comment !== ''
-                                    ? 'primary'
-                                    : 'success'
-                                }
+                                label={`${d.name} - ${d.phone}`}
+                                color={getStateColor(d.state, d.comment !== '')}
                               />
                             </Tooltip>
                           ))}
@@ -208,16 +207,9 @@ const Home: NextPage = () => {
         </div>
       </div>
 
-      <div>
-        <Link
-          href="https://loving-cabbage-5c0.notion.site/204e7a38fe054a088fc910406b30b7b9"
-          target="_blank"
-        >
-          <Button color="error" startIcon={<BugReportIcon />}>
-            버그 신고 방법
-          </Button>
-        </Link>
-      </div>
+      <StateDescriptionBox />
+
+      <BugReportBox />
     </div>
   );
 };
