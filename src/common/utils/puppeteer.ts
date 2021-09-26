@@ -139,6 +139,8 @@ export async function getAttendanceSourceBook(
       (attend) => attend.time === cancel.time && attend.name === cancel.name
     );
     if (idx >= 0) {
+      const newComment = `${result.ATTEND[idx].comment} / ${cancel.comment}`;
+      result.ATTEND[idx].comment = newComment;
       result.ATTEND[idx].state = 'CANCEL';
     }
   });
